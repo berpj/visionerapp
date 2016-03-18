@@ -1,13 +1,37 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8">
-    <title>Hello World!</title>
-  </head>
-  <body>
-    <h1>Hello World!</h1>
-    We are using node <script>document.write(process.versions.node)</script>,
-    Chromium <script>document.write(process.versions.chrome)</script>,
-    and Electron <script>document.write(process.versions.electron)</script>.
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <title>Visioner</title>
+
+  <link rel='stylesheet' href="./css/lato.css">
+  <link rel='stylesheet' href="./css/bootstrap.min.css">
+  <link rel="stylesheet" href="./css/styles.css">
+  <link rel='stylesheet' href="./css/font-awesome.min.css">
+
+  <script src="./js/script.js"></script>
+</head>
+<body>
+
+  <div id="count" style="display: none">0 added</div>
+
+  <div id="icon" class="fa fa-picture-o fa-5x noselect"></div>
+
+  <div id="title" class="noselect">Drop your pictures here</div>
+
+  <div id="progress" class="nosolect" style="display: none">0%</div>
+
+  <div id="format" style="display: none">
+    <input class="input" type="text" value="country-locality-date-label.jpg">
+  </div>
+
+  <div id="submit" style="display: none">
+    <input type="submit" class="btn btn-lg" value="Go!">
+  </div>
+
+  <div id="by">
+    <a href="https://twitter.com/berpj" onclick="const shell = require('electron').shell; shell.openExternal('https://bergeron.io'); return false;">Made by @berpj</a>
+  </div>
+
+</body>
 </html>
