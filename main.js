@@ -179,7 +179,7 @@ function createWindow () {
   mainWindow.loadURL('file://' + __dirname + '/index.html');
 
   ipcMain.on('asynchronous-message', function(event, format, files) {
-    async.eachSeries(files, function(file, main_callback) { process_file(file, format, event.sender, main_callback); });
+    async.each(files, function(file, main_callback) { process_file(file, format, event.sender, main_callback); });
   });
 
   //mainWindow.webContents.openDevTools();
