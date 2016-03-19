@@ -21,9 +21,9 @@ function get_country (format, exifData, callback) {
     var coordinates = get_gps_coordinates(exifData.gps.GPSLatitude, exifData.gps.GPSLongitude);
 
     request.get({
-      url: 'http://vision.bergeron.io/api/v1/geocode?latitude=' + coordinates[0] + '&longitude=' + coordinates[1] + '&type=country', json: true, headers: {"Authorization": "Token token=wNrbKvRUrHRoXGs5IqUSuwtt"}
+      url: 'http://vision.bergeron.io/api/v1/geocode?latitude=' + coordinates[0] + '&longitude=' + coordinates[1], json: true, headers: {"Authorization": "Token token=wNrbKvRUrHRoXGs5IqUSuwtt"}
     }, function (error, response, data) {
-      callback(null, data['place']);
+      callback(null, data['country'].replace(/ /g,"_").toLowerCase());
     });
 
   }
@@ -44,9 +44,9 @@ function get_locality (format, exifData, callback) {
     var coordinates = get_gps_coordinates(exifData.gps.GPSLatitude, exifData.gps.GPSLongitude);
 
     request.get({
-      url: 'http://vision.bergeron.io/api/v1/geocode?latitude=' + coordinates[0] + '&longitude=' + coordinates[1] + '&type=locality', json: true, headers: {"Authorization": "Token token=wNrbKvRUrHRoXGs5IqUSuwtt"}
+      url: 'http://vision.bergeron.io/api/v1/geocode?latitude=' + coordinates[0] + '&longitude=' + coordinates[1], json: true, headers: {"Authorization": "Token token=wNrbKvRUrHRoXGs5IqUSuwtt"}
     }, function (error, response, data) {
-      callback(null, data['place']);
+      callback(null, data['locality'].replace(/ /g,"_").toLowerCase());
     });
   }
   catch (error) {
@@ -81,13 +81,13 @@ function get_label (format, old_full_path, callback) {
 
   try {
     lwip.open(old_full_path, function (err, image) {
-      image.resize(480, 360, function (err, image) {
+      image.resize(640, 480, function (err, image) {
         image.toBuffer('jpg', function(err, buffer) {
           var formData = {
             data: buffer.toString('base64')
           };
           request.post({url: 'http://vision.bergeron.io/api/v1/label', formData: formData, json: true, headers: {"Authorization": "Token token=wNrbKvRUrHRoXGs5IqUSuwtt"}}, function (error, response, data) {
-            callback(null, data['label']);
+            callback(null, data['label'].replace(/ /g,"_").toLowerCase());
           });
         });
       });
@@ -179,7 +179,7 @@ function createWindow () {
   mainWindow.loadURL('file://' + __dirname + '/index.html');
 
   ipcMain.on('asynchronous-message', function(event, format, files) {
-    async.each(files, function(file, main_callback) { process_file(file, format, event.sender, main_callback); });
+    async.eachLimit(files, 4, function(file, main_callback) { process_file(file, format, event.sender, main_callback); });
   });
 
   //mainWindow.webContents.openDevTools();

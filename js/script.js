@@ -38,6 +38,8 @@ $( document ).ready(function() {
   const BrowserWindow = require('electron').remote.BrowserWindow;
   var win = new BrowserWindow({ width: 800, height: 600, show: false });
 
+  var start = 0;
+
   $('#submit input').click(function (e) {
     e.preventDefault();
 
@@ -55,6 +57,7 @@ $( document ).ready(function() {
     var format = $('#format input').val();
 
     ipcRenderer.send('asynchronous-message', format, files);
+    start = new Date().getTime();
 
     return false;
   });
@@ -67,8 +70,9 @@ $( document ).ready(function() {
 
     if (progress == 100 ) {
       $('#title').text('Renaming finished!');
-      new Notification('Visioner', { body: 'Renaming finished!' });
+      new Notification('Visioner', { body: 'Renaming finished! (' + Math.round((new Date().getTime() - start) / 1000) + 's)' });
       files = [];
+      start = 0;
 
       setTimeout(function(){
         $('body').css('background-color', '#2980b9');
