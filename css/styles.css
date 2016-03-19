@@ -81,6 +81,8 @@ body {
   font-size: 2em;
 
   text-align: center;
+
+  width: 400px;
 }
 
 #submit {

@@ -35,6 +35,8 @@ $( document ).ready(function() {
 
   var progress = 0.;
   var count = 0;
+  const BrowserWindow = require('electron').remote.BrowserWindow;
+  var win = new BrowserWindow({ width: 800, height: 600, show: false });
 
   $('#submit input').click(function (e) {
     e.preventDefault();
@@ -46,7 +48,9 @@ $( document ).ready(function() {
     $('#submit').hide();
     $('#title').text('Renaming your pictures...');
     $('#progress').text(progress + '%');
+    win.setProgressBar(progress);
     $('#progress').show();
+
 
     var format = $('#format input').val();
 
@@ -59,17 +63,23 @@ $( document ).ready(function() {
     count++;
     progress = Math.ceil(count / files.length * 100.);
     $('#progress').text(progress + '%');
+    win.setProgressBar(progress / 100);
 
     if (progress == 100 ) {
-      new Notification('Visioner', { body: 'Task finished!' });
-
+      $('#title').text('Renaming finished!');
+      new Notification('Visioner', { body: 'Renaming finished!' });
       files = [];
-      $('body').css('background-color', '#2980b9');
-      $('#count').hide();
-      $('#format').hide();
-      $('#submit').hide();
-      $('#title').text('Drop your pictures here');
-      $('#progress').hide();
+
+      setTimeout(function(){
+        $('body').css('background-color', '#2980b9');
+        $('#count').hide();
+        $('#format').hide();
+        $('#submit').hide();
+        $('#title').text('Drop your pictures here');
+        $('#progress').hide();
+        win.setProgressBar(-1);
+      }, 2500);
+
     } else {
 
     }

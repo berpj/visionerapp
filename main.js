@@ -11,20 +11,21 @@ function get_gps_coordinates (data_latitude, data_longitude) {
 }
 
 function get_country (format, exifData, callback) {
+  var request = require("request");
+
   if (!format.includes('country')) {
     callback(null, 'unknown');
   }
 
-  var request = require("request");
-
   try {
     var coordinates = get_gps_coordinates(exifData.gps.GPSLatitude, exifData.gps.GPSLongitude);
 
-    request({
-      url: 'https://maps.googleapis.com/maps/api/geocode/json?latlng=' + coordinates[0].toString() + ',' + coordinates[1].toString(), json: true
+    request.get({
+      url: 'http://vision.bergeron.io/api/v1/geocode?latitude=' + coordinates[0] + '&longitude=' + coordinates[1] + '&type=country', json: true, headers: {"Authorization": "Token token=wNrbKvRUrHRoXGs5IqUSuwtt"}
     }, function (error, response, data) {
-      callback(null, data.results.filter(function(place) { return place['types'][0] == 'country' })[0].address_components[0].long_name);
+      callback(null, data['place']);
     });
+
   }
   catch (error) {
     callback(null, 'unknown');
@@ -32,21 +33,20 @@ function get_country (format, exifData, callback) {
 }
 
 function get_locality (format, exifData, callback) {
+  var request = require("request");
+
   if (!format.includes('locality')) {
     callback(null, 'unknown');
     return true;
   }
 
-  var request = require("request");
-
   try {
     var coordinates = get_gps_coordinates(exifData.gps.GPSLatitude, exifData.gps.GPSLongitude);
 
-    request({
-      url: 'https://maps.googleapis.com/maps/api/geocode/json?latlng=' + coordinates[0].toString() + ',' + coordinates[1].toString(), json: true
+    request.get({
+      url: 'http://vision.bergeron.io/api/v1/geocode?latitude=' + coordinates[0] + '&longitude=' + coordinates[1] + '&type=locality', json: true, headers: {"Authorization": "Token token=wNrbKvRUrHRoXGs5IqUSuwtt"}
     }, function (error, response, data) {
-      callback(null, data.results.filter(function(place) { return place['types'][0] == 'locality' })[0].address_components[0].long_name);
-
+      callback(null, data['place']);
     });
   }
   catch (error) {
@@ -71,35 +71,17 @@ function get_date (format, exifData, callback) {
 
 function get_label (format, old_full_path, callback) {
   var fs = require('fs');
+  var request = require("request");
+  var lwip = require('lwip');
 
   if (!format.includes('label')) {
     callback(null, 'unknown');
     return true;
   }
 
-  /*
-  image = MiniMagick::Image.open(image_name)
-
-  # Resize image
-  image.resize "640x" + image.height.to_s if image.width > 640
-  image.resize image.width.to_s + "x480" if image.height > 480
-
-  # Convert image to Base 64
-  b64_data = Base64.encode64(image.to_blob)
-  */
-
-
-
-  var im = require('imagemagick');
-
-
-
-
-  var request = require("request");
-
   try {
-    require('lwip').open(old_full_path, function (err, image) {
-      image.resize(640, 480, function (err, image) {
+    lwip.open(old_full_path, function (err, image) {
+      image.resize(480, 360, function (err, image) {
         image.toBuffer('jpg', function(err, buffer) {
           var formData = {
             data: buffer.toString('base64')
@@ -108,7 +90,6 @@ function get_label (format, old_full_path, callback) {
             callback(null, data['label']);
           });
         });
-
       });
     });
   }
@@ -117,7 +98,20 @@ function get_label (format, old_full_path, callback) {
   }
 }
 
-function rename_file (error, results, format, old_full_path, callback_ipc) {
+function fileExists(filePath)
+{
+  var fs = require('fs');
+    try
+    {
+        return fs.statSync(filePath).isFile();
+    }
+    catch (err)
+    {
+        return false;
+    }
+}
+
+function rename_file (error, results, format, old_full_path, callback_ipc, main_callback) {
   var path = require('path');
   var fs = require('fs');
 
@@ -133,9 +127,37 @@ function rename_file (error, results, format, old_full_path, callback_ipc) {
 
   var new_basename = path.basename(new_filename, '.jpg').toLowerCase();
 
-  fs.rename(old_full_path, dir + new_basename + '' + '.jpg');
+  //console.log(old_full_path);
+
+  var count = '';
+  while (fileExists(dir + new_basename + count + '.jpg') && old_full_path != dir + new_basename + count + '.jpg') {
+    if (count == '') {
+      count = 2
+    } else {
+      count++;
+    }
+  }
+
+  fs.rename(old_full_path, dir + new_basename + count + '.jpg');
 
   callback_ipc();
+  main_callback(null, 'done');
+}
+
+function process_file (old_full_path, format, sender, main_callback) {
+  var ExifImage = require('exif').ExifImage;
+  var async = require('async');
+
+  var callback_ipc = function () { sender.send('asynchronous-reply', 'done'); };
+
+  require('exif').ExifImage({ image : old_full_path }, function (error, exifData) {
+    async.parallel([
+      function(callback) { get_country(format, exifData, callback) },
+      function(callback) { get_locality(format, exifData, callback) },
+      function(callback) { get_date(format, exifData, callback) },
+      function(callback) { get_label(format, old_full_path, callback) }
+    ], function(error, results) { rename_file(error, results, format, old_full_path, callback_ipc, main_callback) });
+  });
 }
 
 const electron = require('electron');
@@ -149,32 +171,15 @@ const BrowserWindow = electron.BrowserWindow;
 let mainWindow;
 
 function createWindow () {
+  var async = require('async');
   const ipcMain = require('electron').ipcMain;
-  var async = require("async");
-  var ExifImage = require('exif').ExifImage;
 
   mainWindow = new BrowserWindow({width: 600, height: 530, resizable: false});
 
   mainWindow.loadURL('file://' + __dirname + '/index.html');
 
   ipcMain.on('asynchronous-message', function(event, format, files) {
-    for (var i = 0, len = files.length; i < len; i++) {
-
-      var callback_ipc = function () { event.sender.send('asynchronous-reply', 'done'); };
-
-      var old_full_path = files[i];
-
-      new ExifImage({ image : files[i] }, function (error, exifData) {
-
-        async.parallel([
-          function(callback) { get_country(format, exifData, callback) },
-          function(callback) { get_locality(format, exifData, callback) },
-          function(callback) { get_date(format, exifData, callback) },
-          function(callback) { get_label(format, old_full_path, callback) }
-        ], function(error, results) { rename_file(error, results, format, old_full_path, callback_ipc) });
-
-      });
-    }
+    async.eachSeries(files, function(file, main_callback) { process_file(file, format, event.sender, main_callback); });
   });
 
   //mainWindow.webContents.openDevTools();
