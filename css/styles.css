@@ -62,7 +62,7 @@ body {
   position: absolute;
   right: 0;
   left: 0;
-  top: 355px;
+  top: 350px;
 }
 
 #format input, #format:focus input {
@@ -85,11 +85,18 @@ body {
   width: 400px;
 }
 
+#example {
+  position: absolute;
+  right: 0;
+  left: 0;
+  top: 396px;
+}
+
 #submit {
   position: absolute;
   left: 0;
   right: 0;
-  top: 432px;
+  top: 435px;
 }
 
 #submit input, #submit input:hover {
@@ -103,6 +110,14 @@ body {
   background-color: #f2f2f2;
 
   font-size: 2em;
+}
+
+#submit input:hover {
+  opacity: 0.95;
+}
+
+#submit input:active {
+  opacity: 0.85;
 }
 
 .noselect {

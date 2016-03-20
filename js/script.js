@@ -25,7 +25,9 @@ $( document ).ready(function() {
 
     $('#count').html(files.length + ' added')
     $('#count').show();
+    $('#title').css('bottom', '155px');
     $('#format').show();
+    $('#example').show();
     $('#submit').show();
 
     $('#title').text('Rename into');
@@ -40,6 +42,17 @@ $( document ).ready(function() {
 
   var start = 0;
 
+  $('#format input').bind('input', function(e) {
+    var output = $('#format input').val();
+
+    output = output.replace('locality', 'sydney');
+    output = output.replace('country', 'australia');
+    output = output.replace('date', '06_21_2016');
+    output = output.replace('label', 'beach');
+
+    $('#example #output-example').text(output);
+  })
+
   $('#submit input').click(function (e) {
     e.preventDefault();
 
@@ -47,6 +60,7 @@ $( document ).ready(function() {
     count = 0;
 
     $('#format').hide();
+    $('#example').hide();
     $('#submit').hide();
     $('#title').text('Renaming your pictures...');
     $('#progress').text(progress + '%');
@@ -70,7 +84,7 @@ $( document ).ready(function() {
 
     if (progress == 100 ) {
       $('#title').text('Renaming finished!');
-      new Notification('Visioner', { body: 'Renaming finished! (' + Math.round((new Date().getTime() - start) / 1000) + 's)' });
+      new Notification('Visioner', { body: 'Renaming finished! (' + files.length + ' pictures in ' + Math.round((new Date().getTime() - start) / 1000) + 's)' });
       files = [];
       start = 0;
 

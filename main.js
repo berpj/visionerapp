@@ -21,7 +21,7 @@ function get_country (format, exifData, callback) {
     var coordinates = get_gps_coordinates(exifData.gps.GPSLatitude, exifData.gps.GPSLongitude);
 
     request.get({
-      url: 'http://vision.bergeron.io/api/v1/geocode?latitude=' + coordinates[0] + '&longitude=' + coordinates[1], json: true, headers: {"Authorization": "Token token=wNrbKvRUrHRoXGs5IqUSuwtt"}
+      url: 'http://api.visionerapp.com/v1/geocode?latitude=' + coordinates[0] + '&longitude=' + coordinates[1], json: true, headers: {"Authorization": "Token token=wNrbKvRUrHRoXGs5IqUSuwtt"}
     }, function (error, response, data) {
       callback(null, data['country'].replace(/ /g,"_").toLowerCase());
     });
@@ -44,7 +44,7 @@ function get_locality (format, exifData, callback) {
     var coordinates = get_gps_coordinates(exifData.gps.GPSLatitude, exifData.gps.GPSLongitude);
 
     request.get({
-      url: 'http://vision.bergeron.io/api/v1/geocode?latitude=' + coordinates[0] + '&longitude=' + coordinates[1], json: true, headers: {"Authorization": "Token token=wNrbKvRUrHRoXGs5IqUSuwtt"}
+      url: 'http://api.visionerapp.com/v1/geocode?latitude=' + coordinates[0] + '&longitude=' + coordinates[1], json: true, headers: {"Authorization": "Token token=wNrbKvRUrHRoXGs5IqUSuwtt"}
     }, function (error, response, data) {
       callback(null, data['locality'].replace(/ /g,"_").toLowerCase());
     });
@@ -86,7 +86,7 @@ function get_label (format, old_full_path, callback) {
           var formData = {
             data: buffer.toString('base64')
           };
-          request.post({url: 'http://vision.bergeron.io/api/v1/label', formData: formData, json: true, headers: {"Authorization": "Token token=wNrbKvRUrHRoXGs5IqUSuwtt"}}, function (error, response, data) {
+          request.post({url: 'http://api.visionerapp.com/v1/label', formData: formData, json: true, headers: {"Authorization": "Token token=wNrbKvRUrHRoXGs5IqUSuwtt"}}, function (error, response, data) {
             callback(null, data['label'].replace(/ /g,"_").toLowerCase());
           });
         });
@@ -116,7 +116,7 @@ function rename_file (error, results, format, old_full_path, callback_ipc, main_
   var fs = require('fs');
 
   var extname = path.extname(old_full_path).toLowerCase();
-  var dir = path.dirname(old_full_path) + '/';
+  var dir = path.dirname(old_full_path) + path.sep;
   var old_filename = path.basename(old_full_path).toLowerCase();
   var new_filename = format.toLowerCase();
 
@@ -145,6 +145,18 @@ function rename_file (error, results, format, old_full_path, callback_ipc, main_
 }
 
 function process_file (old_full_path, format, sender, main_callback) {
+  var path = require('path');
+  var mime = require('mime');
+  var extname = path.extname(old_full_path).toLowerCase();
+
+  if (extname != '.jpg' || mime.lookup(old_full_path) != 'image/jpeg')
+  {
+    //dialog.showErrorBox('Error: Visioner can\'t read the file', 'Make sure you only use jpg files.');
+    sender.send('asynchronous-reply', 'done');
+    main_callback(null, 'done');
+    return;
+  }
+
   var ExifImage = require('exif').ExifImage;
   var async = require('async');
 
@@ -161,6 +173,8 @@ function process_file (old_full_path, format, sender, main_callback) {
 }
 
 const electron = require('electron');
+const dialog = require('electron').dialog;
+
 // Module to control application life.
 const app = electron.app;
 // Module to create native browser window.
@@ -186,7 +200,6 @@ function createWindow () {
 
   mainWindow.on('closed', function() {
     mainWindow = null;
-    app.quit();
   });
 }
 
