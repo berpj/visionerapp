@@ -138,7 +138,9 @@ function rename_file (error, results, format, old_full_path, callback_ipc, main_
     }
   }
 
-  fs.rename(old_full_path, dir + new_basename + count + '.jpg');
+  if (fileExists(old_full_path)) {
+    fs.rename(old_full_path, dir + new_basename + count + '.jpg');
+  }
 
   callback_ipc();
   main_callback(null, 'done');
