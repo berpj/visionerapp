@@ -20,9 +20,17 @@ function get_country (format, exifData, callback) {
   try {
     var coordinates = get_gps_coordinates(exifData.gps.GPSLatitude, exifData.gps.GPSLongitude);
 
+    if (coordinates[0] == 0 && coordinates[1] == 0) {
+      callback(null, 'unknown');
+      return;
+    }
+
     request.get({
       url: 'http://api.visionerapp.com/v1/geocode?latitude=' + coordinates[0] + '&longitude=' + coordinates[1], json: true, headers: {"Authorization": "Token token=wNrbKvRUrHRoXGs5IqUSuwtt"}
     }, function (error, response, data) {
+      if (data['country'] == null) {
+        data['country'] = 'unknown';
+      }
       callback(null, data['country'].replace(/ /g,"_").toLowerCase());
     });
 
@@ -43,9 +51,17 @@ function get_locality (format, exifData, callback) {
   try {
     var coordinates = get_gps_coordinates(exifData.gps.GPSLatitude, exifData.gps.GPSLongitude);
 
+    if (coordinates[0] == 0 && coordinates[1] == 0) {
+      callback(null, 'unknown');
+      return;
+    }
+
     request.get({
       url: 'http://api.visionerapp.com/v1/geocode?latitude=' + coordinates[0] + '&longitude=' + coordinates[1], json: true, headers: {"Authorization": "Token token=wNrbKvRUrHRoXGs5IqUSuwtt"}
     }, function (error, response, data) {
+      if (data['locality'] == null) {
+        data['locality'] = 'unknown';
+      }
       callback(null, data['locality'].replace(/ /g,"_").toLowerCase());
     });
   }
@@ -62,6 +78,10 @@ function get_date (format, exifData, callback) {
   }
 
   try {
+    if (exifData.exif.DateTimeOriginal == null) {
+      callback(null, 'unknown');
+      return;
+    }
     callback(null, moment(exifData.exif.DateTimeOriginal, 'YYYY:MM:DD HH:mm:ss').format('DD_MM_YYYY'));
   }
   catch (error) {
@@ -87,6 +107,9 @@ function get_label (format, old_full_path, callback) {
             data: buffer.toString('base64')
           };
           request.post({url: 'http://api.visionerapp.com/v1/label', formData: formData, json: true, headers: {"Authorization": "Token token=wNrbKvRUrHRoXGs5IqUSuwtt"}}, function (error, response, data) {
+            if (data['label'] == null) {
+              data['label'] = 'unknown';
+            }
             callback(null, data['label'].replace(/ /g,"_").toLowerCase());
           });
         });
